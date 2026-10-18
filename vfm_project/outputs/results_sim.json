@@ -1,0 +1,13 @@
+{
+  "E1_rms_pct_fs": 0.39517660949591943,
+  "E2_false_alarms": 0.0,
+  "E3_err_healthy": 0.38405971771279185,
+  "E3_err_worn_static": 14.446530168860585,
+  "E3_err_after": 0.4311510820091869,
+  "E3_a0_est": 8.989307730582926,
+  "E3_model_changes": 1.0,
+  "E4_model_changes": 0.0,
+  "E5_sweeps_while_offline": 0.0,
+  "E6_abort_cycles": 1.0000000000422915,
+  "E7_rel_diff": 5.942222690107646e-16
+}
