@@ -11,17 +11,18 @@ python3 scenarios/run_all.py        # E1-E7 in simulation, writes outputs/*.png 
 Needs numpy and matplotlib only.
 
 ## Layout and owners (names from the team PDF)
-| File | What | Owner |
-|---|---|---|
-| `config.json`, `vfm/config.py` | every tunable number; nothing hard-coded | all |
-| `vfm/hal.py` | hardware interface + CSV schema (`t, dp_kpa, volts, amps, rpm, temp_c, valve_pct, quality`) | K |
-| `vfm/sim.py` | plant simulator + `SimHAL` (test scaffolding only) | AD |
-| `vfm/fastloop.py` | head, affinity normalisation, head/power paths, variances, Kalman, steady-state flag | AD |
-| `vfm/slowloop.py` | CUSUM, excitation gate, weighted RLS, exact downdate, checkpoint/rollback/replay, candidate checks, wear % | AD |
-| `vfm/supervisor.py` | state machine, Manual/Assisted/Auto, sweep controller, interlocks, audit, `apply_model()` gate, annotation to unlearning | AN |
-| `vfm/faults.py` | stuck / spike / out-of-range detector | AN |
-| (not started) | MQTT bridge + JSON schemas, dashboard | AN, S |
-| (not started) | C++ port for the ESP32 (outputs must match these Python results) | AD, K |
+
+| File                           | What                                                                                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `config.json`, `vfm/config.py` | every tunable number; nothing hard-coded                                                                                 |
+| `vfm/hal.py`                   | hardware interface + CSV schema (`t, dp_kpa, volts, amps, rpm, temp_c, valve_pct, quality`)                              |
+| `vfm/sim.py`                   | plant simulator + `SimHAL` (test scaffolding only)                                                                       |
+| `vfm/fastloop.py`              | head, affinity normalisation, head/power paths, variances, Kalman, steady-state flag                                     |
+| `vfm/slowloop.py`              | CUSUM, excitation gate, weighted RLS, exact downdate, checkpoint/rollback/replay, candidate checks, wear %               |
+| `vfm/supervisor.py`            | state machine, Manual/Assisted/Auto, sweep controller, interlocks, audit, `apply_model()` gate, annotation to unlearning |
+| `vfm/faults.py`                | stuck / spike / out-of-range detector                                                                                    |
+| (not started)                  | MQTT bridge + JSON schemas, dashboard                                                                                    |
+| (not started)                  | C++ port for the ESP32 (outputs must match these Python results)                                                         |
 
 ## Swapping in the real rig
 Write one class that implements `HAL.read_sensors / set_valve / get_valve` and returns the same sample dict
