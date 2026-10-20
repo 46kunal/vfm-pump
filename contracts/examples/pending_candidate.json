@@ -1,0 +1,11 @@
+{
+  "example_only": true,
+  "source": "simulation",
+  "candidate_id": "sim-example-001",
+  "created_t_s": 220.0,
+  "reason": "Example of a proposed head-curve update after simulated drift",
+  "theta_active": [10.0, -0.1, -0.02],
+  "theta_candidate": [9.0, -0.1, -0.02],
+  "a0_drift_pct": -10.0,
+  "status": "pending"
+}

@@ -1,0 +1,25 @@
+{
+  "a": [
+    "vfm/fastloop.py",
+    "vfm/slowloop.py",
+    "algorithms/**",
+    "tests/algorithms/**"
+  ],
+  "b": [
+    "vfm/supervisor.py",
+    "vfm/faults.py",
+    "vfm/hal.py",
+    "vfm/sim.py",
+    "vfm/runtime.py",
+    "device/**",
+    "tests/device/**"
+  ],
+  "c": [
+    "gateway/**",
+    "tests/gateway/**"
+  ],
+  "d": [
+    "dashboard/**",
+    "tests/dashboard/**"
+  ]
+}

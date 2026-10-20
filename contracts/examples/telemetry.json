@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "device_id": "sim-pump-01",
+  "boot_id": "example-session",
+  "sequence": 0,
+  "source": "simulation",
+  "t_s": 10.0,
+  "model_version": 0,
+  "flow_l_min": 5.1,
+  "sigma_l_min": 0.2,
+  "head_flow_l_min": 5.0,
+  "power_flow_l_min": 5.2,
+  "confidence": "high",
+  "valid": true,
+  "state": "MONITOR",
+  "mode": "manual"
+}

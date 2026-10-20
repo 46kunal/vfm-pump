@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Virtual Flow Meter</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script defer src="/app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">VIRTUAL FLOW METER</p><h1>Pump overview</h1></div>
+      <span id="connection" class="pill">Connecting…</span>
+    </header>
+    <p class="notice">Simulation data for software development. No physical pump is connected.</p>
+    <section class="cards" aria-label="Current readings">
+      <article class="primary"><h2>Estimated flow</h2><p><strong id="flow">—</strong> <span>L/min</span></p><small id="uncertainty">Uncertainty: —</small></article>
+      <article><h2>Confidence</h2><p id="confidence">—</p><small>Based on estimator output</small></article>
+      <article><h2>Device state</h2><p id="state">—</p><small id="mode">Mode: —</small></article>
+      <article><h2>Data source</h2><p id="source">—</p><small id="device">Device: —</small></article>
+    </section>
+    <section class="chart-panel">
+      <div class="chart-head"><div><h2>Flow history</h2><p>Estimated flow (L/min) versus elapsed time (s)</p></div><span id="samples">0 samples</span></div>
+      <canvas id="chart" width="960" height="300" role="img" aria-label="Recent estimated flow chart"></canvas>
+      <p id="chart-note">Waiting for data…</p>
+    </section>
+    <footer>Local development dashboard · <span id="updated">No readings yet</span></footer>
+  </main>
+</body>
+</html>

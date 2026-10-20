@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VFM telemetry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "device_id", "boot_id", "sequence", "source", "t_s", "model_version", "flow_l_min", "sigma_l_min", "head_flow_l_min", "power_flow_l_min", "confidence", "valid", "state", "mode"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "device_id": {"type": "string", "minLength": 1},
+    "boot_id": {"type": "string", "minLength": 1},
+    "sequence": {"type": "integer", "minimum": 0},
+    "source": {"enum": ["simulation", "replay", "hardware"]},
+    "t_s": {"type": "number", "minimum": 0},
+    "model_version": {"type": "integer", "minimum": 0},
+    "flow_l_min": {"type": ["number", "null"]},
+    "sigma_l_min": {"type": ["number", "null"], "minimum": 0},
+    "head_flow_l_min": {"type": ["number", "null"]},
+    "power_flow_l_min": {"type": ["number", "null"]},
+    "confidence": {"enum": ["high", "low"]},
+    "valid": {"type": "boolean"},
+    "state": {"enum": ["BOOT", "MONITOR", "CHECK_EXCITATION", "REQUEST_SWEEP", "SWEEP", "CANDIDATE", "PENDING_APPROVAL", "APPLY", "SAFE"]},
+    "mode": {"enum": ["manual", "assisted", "auto"]}
+  }
+}

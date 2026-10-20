@@ -1,54 +1,62 @@
-# Self-Calibrating Virtual Flow Meter: software scaffolding (Python reference)
+# Self-Calibrating Virtual Flow Meter
 
-Everything here runs without hardware. **All numbers in `config.json` and all results from `scenarios/` are
-simulation placeholders. None of them is a rig result.** Real results come only from the physical rig.
+A Python reference and local software baseline for a pump flow estimator. It runs
+without hardware. **All current curves, sensor noise, and scenario results are
+simulation placeholders, not physical-rig results.**
 
-## Run
+## Run the integrated baseline
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m gateway.app
 ```
-python3 tests/test_core.py          # 10 unit tests, incl. downdate == retrain to ~1e-15
-python3 scenarios/run_all.py        # E1-E7 in simulation, writes outputs/*.png and results_sim.json
+
+Open `http://127.0.0.1:8765`. The simulator produces 10 Hz readings in
+engineering units. The gateway serves `GET /api/telemetry?limit=120`; the
+browser displays current flow, uncertainty, state, confidence, and a history
+chart. Stop the process with Ctrl+C. No hardware or MQTT broker is needed.
+
+```powershell
+python -m pytest
+python -m vfm.runtime --steps 20
+python scenarios/run_all.py
 ```
-Needs numpy and matplotlib only.
 
-## Layout and owners (names from the team PDF)
+The last command runs E1-E7 in simulation and regenerates the tracked baseline
+plots/results in `outputs/`. Use `outputs/local/` for new experiments.
 
-| File                           | What                                                                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `config.json`, `vfm/config.py` | every tunable number; nothing hard-coded                                                                                 |
-| `vfm/hal.py`                   | hardware interface + CSV schema (`t, dp_kpa, volts, amps, rpm, temp_c, valve_pct, quality`)                              |
-| `vfm/sim.py`                   | plant simulator + `SimHAL` (test scaffolding only)                                                                       |
-| `vfm/fastloop.py`              | head, affinity normalisation, head/power paths, variances, Kalman, steady-state flag                                     |
-| `vfm/slowloop.py`              | CUSUM, excitation gate, weighted RLS, exact downdate, checkpoint/rollback/replay, candidate checks, wear %               |
-| `vfm/supervisor.py`            | state machine, Manual/Assisted/Auto, sweep controller, interlocks, audit, `apply_model()` gate, annotation to unlearning |
-| `vfm/faults.py`                | stuck / spike / out-of-range detector                                                                                    |
-| (not started)                  | MQTT bridge + JSON schemas, dashboard                                                                                    |
-| (not started)                  | C++ port for the ESP32 (outputs must match these Python results)                                                         |
+## Where to start
 
-## Swapping in the real rig
-Write one class that implements `HAL.read_sensors / set_valve / get_valve` and returns the same sample dict
-(units: kPa, V, A, rpm, C, valve 0..1). Nothing else changes. Log real data with the same CSV schema into `data/real/`.
-Keep `data/sim/` and `data/real/` separate and label every plot.
+- [Software build plan](docs/ARCHITECTURE.md): baseline, parallel work,
+  integration, and hardware path.
+- [Team workflow](CONTRIBUTING.md): four owners including the lead, file
+  boundaries, branches, and reviews.
+- [Individual role guides](docs/team/): exact first contributions and later
+  responsibilities.
+- [Telemetry contract](contracts/README.md): schema, units, and read API.
 
-## Authority rules that are enforced in code (not just by convention)
-- Every state change goes through `Supervisor.transition()`, which writes the audit entry.
-- The active curve changes only in `Supervisor.apply_model()`, which raises `PermissionError` without an approval record.
-- Automatic unlearning edits only the candidate learner; the active curve is untouched.
-- No new sweep starts while the network is down; a sweep in progress goes to SAFE (valve restored).
+## Code layout
 
-## Deliberate differences from the PDF (decide with your guide)
-1. **CUSUM input.** Residual is normalised per sample by sqrt(sigma_h^2 + sigma_p^2) instead of a single sigma_r, and the slow loop
-   feeds CUSUM 1 Hz window means (scaled by sqrt(n)). With 1 Hz samples, k=0.5 and h=12 give an in-control run length of about 1e6 samples
-   (h=4-5 would false-alarm roughly every 8 minutes). Re-tune k, h on real residuals.
-2. **Sample weights come from variance** (w = 1/sigma_y^2, including the error from the power-path flow used as regressor), not a fixed
-   multiplier r. Operator reference readings simply carry a small sigma, hence a large weight.
-3. **Fit uses only samples collected after the alarm.** The CUSUM onset estimate can reach back into pre-drift samples and drag the
-   candidate toward the old curve (this happened in testing).
-4. **Replay keeps the time index.** A removed sample becomes a zero-weight decay step, so replay, downdate and the batch oracle agree exactly.
+| Area | Purpose |
+|---|---|
+| `vfm/fastloop.py`, `vfm/slowloop.py` | Flow estimation, calibration candidate, CUSUM, unlearning |
+| `vfm/hal.py`, `vfm/sim.py`, `vfm/supervisor.py`, `vfm/faults.py` | Device boundary, simulator, states, interlocks, fault checks |
+| `vfm/runtime.py` | Simulator-to-telemetry adapter and JSONL output |
+| `gateway/app.py` | Local read API and static dashboard serving |
+| `dashboard/` | Browser app served by the gateway |
+| `contracts/` | Shared telemetry schema and simulated fixtures |
+| `tests/`, `scenarios/` | Automated checks and simulated experiments |
 
-## Known limits of the simulation (say these before anyone asks)
-- The simulator uses the same affinity laws and curve family as the estimator, so E1 passing at three speeds is true by construction,
-  not evidence. Only the rig can test the affinity assumption.
-- Only the head curve wears in the sim (a0 drops); the power curve does not. On a real pump both move, so the power-path flow used as
-  the RLS regressor can be biased. The operator's reference reading is the real anchor.
-- Noise is Gaussian and white; real sensors will be worse. The gate threshold (`gate_eps`), CUSUM settings and noise sigmas are placeholders.
-- Sensor lags (0.15 s head, 0.6 s power) and valve slew are guesses.
+## Hardware boundary and known limitations
+
+The eventual real adapter implements `HAL.read_sensors()`, `set_valve()`, and
+`get_valve()` and converts readings to kPa, V, A, rpm, degrees C, and a valve
+fraction from 0 to 1. Real sensor calibration, pump curves, valve feedback,
+ESP32 timing, accuracy, and safety behavior must be measured on the physical
+rig. The simulator uses the same curve family and affinity laws as the
+estimator, with simplified Gaussian noise and head-only wear, so its passing
+accuracy scenarios are not evidence of real accuracy.
+
+The current gateway and dashboard are read-only. Operator commands, MQTT,
+authenticated approval, durable model storage, and the ESP32 port are later
+stages. Keep simulation and hardware data labeled separately.

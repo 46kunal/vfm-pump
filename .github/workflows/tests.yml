@@ -1,0 +1,29 @@
+name: Tests and role scope
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Check role branch ownership
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: |
+          case "$HEAD_BRANCH" in
+            codex/a-*) role=a ;;
+            codex/b-*) role=b ;;
+            codex/c-*) role=c ;;
+            codex/d-*) role=d ;;
+            *) echo "Integration branch: scope requires lead review."; exit 0 ;;
+          esac
+          python tools/check_ownership.py --role "$role" --base "origin/$BASE_BRANCH"
+      - run: python -m pytest

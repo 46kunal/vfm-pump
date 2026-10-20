@@ -5,3 +5,10 @@ __pycache__/
 *.swp
 *.swo
 .DS_Store
+.venv/
+node_modules/
+dashboard/dist/
+dashboard/build/
+outputs/local/
+.env
+.env.local
