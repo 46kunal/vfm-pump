@@ -1,31 +1,224 @@
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Virtual Flow Meter</title>
+  <meta name="theme-color" content="#0b1724">
+  <title>VFM Control Room | Virtual Flow Meter</title>
   <link rel="stylesheet" href="/styles.css">
   <script defer src="/app.js"></script>
 </head>
 <body>
-  <main>
-    <header>
-      <div><p class="eyebrow">VIRTUAL FLOW METER</p><h1>Pump overview</h1></div>
-      <span id="connection" class="pill">Connecting…</span>
+  <main class="dashboard">
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <div>
+          <p class="eyebrow">VIRTUAL FLOW METER</p>
+          <h1>Control Room</h1>
+          <p class="subtitle">Operator monitoring console</p>
+        </div>
+      </div>
+
+      <div class="connection-area">
+        <span id="connection" class="status-pill neutral">
+          <span class="status-dot"></span>
+          Connecting...
+        </span>
+        <span id="freshness" class="freshness">Awaiting telemetry</span>
+      </div>
     </header>
-    <p class="notice">Simulation data for software development. No physical pump is connected.</p>
-    <section class="cards" aria-label="Current readings">
-      <article class="primary"><h2>Estimated flow</h2><p><strong id="flow">—</strong> <span>L/min</span></p><small id="uncertainty">Uncertainty: —</small></article>
-      <article><h2>Confidence</h2><p id="confidence">—</p><small>Based on estimator output</small></article>
-      <article><h2>Device state</h2><p id="state">—</p><small id="mode">Mode: —</small></article>
-      <article><h2>Data source</h2><p id="source">—</p><small id="device">Device: —</small></article>
+
+    <section class="simulation-banner">
+      <span class="banner-icon">ⓘ</span>
+      <p>
+        <strong>Simulation environment</strong>
+        <span>No physical pump is connected. Readings are for software development.</span>
+      </p>
+      <span class="environment-tag">SIMULATED</span>
     </section>
-    <section class="chart-panel">
-      <div class="chart-head"><div><h2>Flow history</h2><p>Estimated flow (L/min) versus elapsed time (s)</p></div><span id="samples">0 samples</span></div>
-      <canvas id="chart" width="960" height="300" role="img" aria-label="Recent estimated flow chart"></canvas>
-      <p id="chart-note">Waiting for data…</p>
+
+    <section class="section-heading">
+      <div>
+        <p class="eyebrow">LIVE TELEMETRY</p>
+        <h2>Pump overview</h2>
+      </div>
+      <span id="updated" class="updated-label">No readings yet</span>
     </section>
-    <footer>Local development dashboard · <span id="updated">No readings yet</span></footer>
+
+    <section class="metrics-grid" aria-label="Live pump readings">
+
+      <article class="metric-card flow-card">
+        <div class="card-topline">
+          <span class="metric-label">ESTIMATED FLOW</span>
+          <span class="metric-icon">↗</span>
+        </div>
+        <div class="flow-reading">
+          <strong id="flow">—</strong>
+          <span>L/min</span>
+        </div>
+        <p id="uncertainty" class="metric-footnote">Uncertainty: —</p>
+        <div class="flow-accent"></div>
+      </article>
+
+      <article class="metric-card">
+        <div class="card-topline">
+          <span class="metric-label">HEAD ESTIMATE</span>
+          <span class="metric-icon">H</span>
+        </div>
+        <p class="metric-reading"><strong id="head-flow">—</strong><span>L/min</span></p>
+        <p class="metric-footnote">Head-based flow</p>
+      </article>
+
+      <article class="metric-card">
+        <div class="card-topline">
+          <span class="metric-label">POWER ESTIMATE</span>
+          <span class="metric-icon">P</span>
+        </div>
+        <p class="metric-reading"><strong id="power-flow">—</strong><span>L/min</span></p>
+        <p class="metric-footnote">Power-based flow</p>
+      </article>
+
+      <article class="metric-card">
+        <div class="card-topline">
+          <span class="metric-label">ESTIMATE DISAGREEMENT</span>
+          <span class="metric-icon">Δ</span>
+        </div>
+        <p class="metric-reading"><strong id="disagreement">—</strong><span>L/min</span></p>
+        <p class="metric-footnote">Absolute head-power difference</p>
+      </article>
+
+    </section>
+
+    <section class="details-grid">
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">SUPERVISION</p>
+            <h2>Operating status</h2>
+          </div>
+          <span id="validity" class="status-tag neutral">Awaiting data</span>
+        </div>
+
+        <div class="status-list">
+          <div class="status-row">
+            <span>Device state</span>
+            <strong id="state">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Operating mode</span>
+            <strong id="mode">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Confidence</span>
+            <strong id="confidence">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Data source</span>
+            <strong id="source">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Device ID</span>
+            <strong id="device">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Sequence</span>
+            <strong id="sequence">—</strong>
+          </div>
+          <div class="status-row">
+            <span>Model version</span>
+            <strong id="model-version">—</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">PERFORMANCE</p>
+            <h2>Flow history</h2>
+            <p class="panel-description">Estimated flow over elapsed device time</p>
+          </div>
+          <span id="samples" class="sample-count">0 samples</span>
+        </div>
+
+        <canvas
+          id="chart"
+          width="960"
+          height="300"
+          role="img"
+          aria-label="Recent estimated flow history chart">
+        </canvas>
+
+        <p id="chart-note" class="chart-note">Waiting for telemetry...</p>
+      </article>
+
+    </section>
+
+    <section class="panel candidate-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">MODEL MANAGEMENT</p>
+          <h2>Pending candidate</h2>
+          <p class="panel-description">
+            Example of a proposed model update. Informational only.
+          </p>
+        </div>
+        <span class="status-tag warning">EXAMPLE · NOT APPROVED</span>
+      </div>
+
+      <div class="candidate-content">
+        <div class="candidate-summary">
+          <span class="metric-label">CANDIDATE ID</span>
+          <strong id="candidate-id">—</strong>
+          <p id="candidate-reason">Loading example...</p>
+        </div>
+
+        <div class="candidate-stat">
+          <span class="metric-label">ACTIVE A0</span>
+          <strong id="active-a0">—</strong>
+        </div>
+
+        <div class="candidate-stat">
+          <span class="metric-label">PROPOSED A0</span>
+          <strong id="candidate-a0">—</strong>
+        </div>
+
+        <div class="candidate-stat">
+          <span class="metric-label">A0 DRIFT</span>
+          <strong id="candidate-drift">—</strong>
+        </div>
+      </div>
+
+      <p class="candidate-disclaimer">
+        This is a local example payload, not a live approval request.
+        No model changes or approval actions are available in this dashboard.
+      </p>
+    </section>
+
+    <footer class="footer">
+      <span>VFM · Operator Dashboard</span>
+      <span>Read-only monitoring interface</span>
+    </footer>
+
   </main>
+
+  <script type="application/json" id="pending-candidate-data">
+  {
+    "example_only": true,
+    "source": "simulation",
+    "candidate_id": "sim-example-001",
+    "created_t_s": 220.0,
+    "reason": "Example of a proposed head-curve update after simulated drift",
+    "theta_active": [10.0, -0.1, -0.02],
+    "theta_candidate": [9.0, -0.1, -0.02],
+    "a0_drift_pct": -10.0,
+    "status": "pending"
+  }
+  </script>
+
 </body>
 </html>
