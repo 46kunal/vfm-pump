@@ -31,13 +31,13 @@
       </div>
     </header>
 
-    <section class="simulation-banner">
+    <section class="simulation-banner" id="source-banner">
       <span class="banner-icon">ⓘ</span>
       <p>
-        <strong>Simulation environment</strong>
-        <span>No physical pump is connected. Readings are for software development.</span>
+        <strong id="banner-title">Waiting for the ESP32</strong>
+        <span id="banner-text">No readings yet. Start the serial bridge or post to /api/hardware/sample. No simulated values are shown.</span>
       </p>
-      <span class="environment-tag">SIMULATED</span>
+      <span class="environment-tag" id="banner-tag">NO DATA</span>
     </section>
 
     <section class="section-heading">
@@ -88,6 +88,71 @@
         </div>
         <p class="metric-reading"><strong id="disagreement">—</strong><span>L/min</span></p>
         <p class="metric-footnote">Absolute head-power difference</p>
+      </article>
+
+    </section>
+
+    <section class="section-heading sensor-heading">
+      <div>
+        <p class="eyebrow">MEASURED BY THE ESP32</p>
+        <h2>Live sensors</h2>
+      </div>
+    </section>
+
+    <section class="metrics-grid sensor-grid" aria-label="Live sensor readings">
+
+      <article class="metric-card" id="card-volts">
+        <div class="card-topline">
+          <span class="metric-label">PUMP VOLTAGE</span>
+          <span class="metric-icon">V</span>
+        </div>
+        <p class="metric-reading"><strong id="volts">N/A</strong><span>V</span></p>
+        <p class="metric-footnote" id="volts-note">INA219</p>
+      </article>
+
+      <article class="metric-card" id="card-amps">
+        <div class="card-topline">
+          <span class="metric-label">PUMP CURRENT</span>
+          <span class="metric-icon">A</span>
+        </div>
+        <p class="metric-reading"><strong id="amps">N/A</strong><span>mA</span></p>
+        <p class="metric-footnote" id="amps-note">INA219</p>
+      </article>
+
+      <article class="metric-card" id="card-power">
+        <div class="card-topline">
+          <span class="metric-label">PUMP POWER</span>
+          <span class="metric-icon">W</span>
+        </div>
+        <p class="metric-reading"><strong id="power">N/A</strong><span>W</span></p>
+        <p class="metric-footnote" id="power-note">Volts x amps</p>
+      </article>
+
+      <article class="metric-card" id="card-temp">
+        <div class="card-topline">
+          <span class="metric-label">WATER TEMPERATURE</span>
+          <span class="metric-icon">T</span>
+        </div>
+        <p class="metric-reading"><strong id="temp">N/A</strong><span>&deg;C</span></p>
+        <p class="metric-footnote" id="temp-note">DS18B20</p>
+      </article>
+
+      <article class="metric-card" id="card-mass">
+        <div class="card-topline">
+          <span class="metric-label">LOAD CELL</span>
+          <span class="metric-icon">M</span>
+        </div>
+        <p class="metric-reading"><strong id="mass">N/A</strong><span id="mass-unit">g</span></p>
+        <p class="metric-footnote" id="mass-note">HX711</p>
+      </article>
+
+      <article class="metric-card" id="card-servo">
+        <div class="card-topline">
+          <span class="metric-label">VALVE COMMAND</span>
+          <span class="metric-icon">&deg;</span>
+        </div>
+        <p class="metric-reading"><strong id="servo">N/A</strong><span>&deg;</span></p>
+        <p class="metric-footnote" id="servo-note">Servo commanded angle</p>
       </article>
 
     </section>
@@ -158,44 +223,43 @@
 
     </section>
 
+    <section class="panel power-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">MEASURED</p>
+          <h2>Pump power history</h2>
+          <p class="panel-description">Electrical power (W) over time since the gateway started (s)</p>
+        </div>
+        <span id="power-samples" class="sample-count">0 samples</span>
+      </div>
+
+      <canvas
+        id="power-chart"
+        width="960"
+        height="300"
+        role="img"
+        aria-label="Recent pump power history chart">
+      </canvas>
+
+      <p id="power-chart-note" class="chart-note">Waiting for INA219 data...</p>
+    </section>
+
     <section class="panel candidate-panel">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">MODEL MANAGEMENT</p>
           <h2>Pending candidate</h2>
           <p class="panel-description">
-            Example of a proposed model update. Informational only.
+            No candidate model has been proposed by the device.
           </p>
         </div>
-        <span class="status-tag warning">EXAMPLE · NOT APPROVED</span>
-      </div>
-
-      <div class="candidate-content">
-        <div class="candidate-summary">
-          <span class="metric-label">CANDIDATE ID</span>
-          <strong id="candidate-id">—</strong>
-          <p id="candidate-reason">Loading example...</p>
-        </div>
-
-        <div class="candidate-stat">
-          <span class="metric-label">ACTIVE A0</span>
-          <strong id="active-a0">—</strong>
-        </div>
-
-        <div class="candidate-stat">
-          <span class="metric-label">PROPOSED A0</span>
-          <strong id="candidate-a0">—</strong>
-        </div>
-
-        <div class="candidate-stat">
-          <span class="metric-label">A0 DRIFT</span>
-          <strong id="candidate-drift">—</strong>
-        </div>
+        <span class="status-tag neutral">NONE</span>
       </div>
 
       <p class="candidate-disclaimer">
-        This is a local example payload, not a live approval request.
-        No model changes or approval actions are available in this dashboard.
+        Candidate updates need independent weighed reference flow and an approval
+        flow that does not exist yet. No model changes or approval actions are
+        available in this dashboard.
       </p>
     </section>
 
@@ -205,20 +269,6 @@
     </footer>
 
   </main>
-
-  <script type="application/json" id="pending-candidate-data">
-  {
-    "example_only": true,
-    "source": "simulation",
-    "candidate_id": "sim-example-001",
-    "created_t_s": 220.0,
-    "reason": "Example of a proposed head-curve update after simulated drift",
-    "theta_active": [10.0, -0.1, -0.02],
-    "theta_candidate": [9.0, -0.1, -0.02],
-    "a0_drift_pct": -10.0,
-    "status": "pending"
-  }
-  </script>
 
 </body>
 </html>

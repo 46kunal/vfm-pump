@@ -1,8 +1,9 @@
 # Self-Calibrating Virtual Flow Meter
 
-A Python reference and local software baseline for a pump flow estimator. It runs
-without hardware. **All current curves, sensor noise, and scenario results are
-simulation placeholders, not physical-rig results.**
+A Python reference and local software for a pump flow estimator. The live
+dashboard shows **only real ESP32 readings** (pump V/A, water temperature, load
+cell). The simulator remains only for offline tests and scenarios; its curves and
+results are placeholders, not physical-rig results.
 
 ## Run the integrated baseline
 
@@ -11,10 +12,10 @@ python -m pip install -r requirements-dev.txt
 python -m gateway.app
 ```
 
-Open `http://127.0.0.1:8765`. The simulator produces 10 Hz readings in
-engineering units. The gateway serves `GET /api/telemetry?limit=120`; the
-browser displays current flow, uncertainty, state, confidence, and a history
-chart. Stop the process with Ctrl+C. No hardware or MQTT broker is needed.
+Open `http://127.0.0.1:8765`. Nothing is shown until the ESP32 posts readings:
+see [docs/HARDWARE_ENDPOINTS.md](docs/HARDWARE_ENDPOINTS.md) for every endpoint and
+`tools/serial_bridge.py` to forward the USB serial output. Estimated flow stays
+N/A until a calibrated model exists. Stop the process with Ctrl+C.
 
 ```powershell
 python -m pytest

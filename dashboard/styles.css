@@ -534,3 +534,10 @@ canvas {
     transition-duration: 0.01ms !important;
   }
 }
+
+.sensor-heading{margin-top:34px}
+.sensor-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.metric-card.dim{opacity:.55}
+.power-panel{margin-top:17px}
+@media (max-width:1050px){.sensor-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:650px){.sensor-grid{grid-template-columns:1fr}}
