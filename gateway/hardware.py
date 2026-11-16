@@ -100,6 +100,7 @@ class HardwareStore:
             age = now - seen
             sensors[name] = {**record, "age_s": round(age, 3), "stale": age > stale_after}
         return {"schema": "hardware-v1", "source": "hardware",
+                "server_t_s": round(now - self._start, 3),
                 "stale_after_s": stale_after, "sensors": sensors}
 
     def history(self, sensor, limit=120):

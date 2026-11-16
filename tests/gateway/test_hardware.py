@@ -73,6 +73,7 @@ def test_nothing_is_reported_until_real_data_arrives(server):
     base, _ = server
     latest = get(base, "/api/hardware/latest")
     assert latest["source"] == "hardware"
+    assert isinstance(latest["server_t_s"], float)
     assert all(value is None for value in latest["sensors"].values())
     assert get(base, "/api/telemetry")["items"] == []
     assert get(base, "/api/hardware/history?sensor=ina219")["items"] == []
