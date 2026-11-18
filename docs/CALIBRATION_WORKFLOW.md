@@ -62,10 +62,22 @@ the valid flow, power, voltage and temperature ranges, the flow ranges where pow
 changes (flow should read Unavailable there), the raw files with their hashes, the load-cell
 calibration ids, warnings, and a checksum.
 
+## 4. Show the estimate: `gateway.app --profile`
+
+Once the validation error is acceptable, restart the gateway with the profile:
+
+```powershell
+python -m gateway.app --profile data/real/profiles/ad03_power_profile_<time>.json
+```
+
+The gateway checks the profile's checksum and refuses a tampered, non-monotonic or
+non-hardware profile. It also refuses one without held-out validation unless you pass
+`--allow-unvalidated` (the dashboard then says "NOT validated"). `GET /api/hardware/latest`
+gains an `estimate` object, and the dashboard shows it. The estimate is Unavailable, with the
+reason, when the power reading is missing or stale, the supply voltage, water temperature or
+pump power is outside the calibrated range, or the flow falls in a weak range.
+
 ## What this does not do yet
 
-- The profile is not loaded by the gateway, so the dashboard still shows estimated flow as
-  Unavailable. Wiring a validated profile into the estimate is the next software step, and it
-  should only happen after the validation error is acceptable.
 - Timing is by hand. The ESP32 could detect the mass rise automatically later.
 - A good validation result applies only to this pump, supply and rig.

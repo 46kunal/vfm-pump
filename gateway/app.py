@@ -13,6 +13,7 @@ from pathlib import Path
 import threading
 from urllib.parse import parse_qs, urlsplit
 
+from gateway.estimator import PowerEstimator, ProfileError, load_profile
 from gateway.hardware import HardwareStore, ReadingError, UnknownSensor, SENSORS
 
 
@@ -43,8 +44,9 @@ def _reject_constant(name):
     raise ValueError(f"{name} is not valid JSON")
 
 
-def make_handler(store, hardware=None, token=None):
+def make_handler(store, hardware=None, token=None, estimator=None):
     hardware = hardware if hardware is not None else HardwareStore()
+    estimator = estimator if estimator is not None else PowerEstimator(None)
 
     class Handler(BaseHTTPRequestHandler):
         def reply(self, body, mime, status=200):
@@ -79,7 +81,9 @@ def make_handler(store, hardware=None, token=None):
                     self.reply_json({"schema_version": 1, "items": store.recent(limit)})
                 return
             if parsed.path == "/api/hardware/latest":
-                self.reply_json(hardware.snapshot())
+                snapshot = hardware.snapshot()
+                snapshot["estimate"] = estimator.estimate(snapshot["sensors"])
+                self.reply_json(snapshot)
                 return
             if parsed.path == "/api/hardware/history":
                 sensor = parse_qs(parsed.query).get("sensor", [""])[0]
@@ -154,10 +158,25 @@ def main():
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--token", default=None,
                         help="require this X-VFM-Token header on every POST")
+    parser.add_argument("--profile", default=None,
+                        help="validated power profile from tools/fit_power_model.py; "
+                             "without it the estimated flow stays Unavailable")
+    parser.add_argument("--allow-unvalidated", action="store_true",
+                        help="load a profile that has no held-out validation (shown as unvalidated)")
     args = parser.parse_args()
-    server = ThreadingHTTPServer((args.host, args.port),
-                                 make_handler(TelemetryStore(), HardwareStore(), args.token))
+    profile = None
+    if args.profile:
+        try:
+            profile = load_profile(args.profile, allow_unvalidated=args.allow_unvalidated)
+        except ProfileError as problem:
+            parser.error(str(problem))
+    server = ThreadingHTTPServer(
+        (args.host, args.port),
+        make_handler(TelemetryStore(), HardwareStore(), args.token, PowerEstimator(profile)))
     print(f"Virtual flow meter: http://{args.host}:{server.server_port}", flush=True)
+    print("Calibrated profile: " + (f"{args.profile} (id {profile['checksum_sha256'][:12]})"
+                                    if profile else "none, estimated flow is Unavailable"),
+          flush=True)
     print("Waiting for ESP32 readings: POST /api/hardware/<sensor> or /api/hardware/sample",
           flush=True)
     try:

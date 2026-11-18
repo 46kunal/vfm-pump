@@ -340,6 +340,26 @@ function setBanner(title, text, tag) {
   setText("banner-tag", tag);
 }
 
+// Power-only estimate from the gateway's validated profile. Unavailable stays unavailable.
+function showEstimate(estimate) {
+  if (!estimate) {
+    return;
+  }
+  if (estimate.available === true && isNumber(estimate.flow_l_min)) {
+    setText("flow", number(estimate.flow_l_min));
+    setText("power-flow", number(estimate.flow_l_min));
+    const error = isNumber(estimate.error_mae_l_min)
+      ? `typical error ${number(estimate.error_mae_l_min)} L/min`
+      : "error not reported";
+    const basis = estimate.validated ? "validated" : "NOT validated";
+    setText("uncertainty", `Power-based, ${basis}, ${error}. Model ${estimate.model_id}`);
+  } else {
+    setText("flow", "Unavailable");
+    setText("power-flow", "—");
+    setText("uncertainty", estimate.reason || "No calibrated model yet");
+  }
+}
+
 function updateHardware(latest, powerItems) {
   const s = latest.sensors;
   setSensor("volts", s.ina219, s.ina219 && s.ina219.volts, 2, "INA219");
@@ -348,6 +368,7 @@ function updateHardware(latest, powerItems) {
   setSensor("temp", s.ds18b20, s.ds18b20 && s.ds18b20.temp_c, 1, "DS18B20");
   setSensor("servo", s.servo, s.servo && s.servo.angle_deg, 0, "Servo commanded angle");
   setMass(s.hx711);
+  showEstimate(latest.estimate);
 
   const seen = Object.values(s).filter(Boolean);
   const live = seen.some(sensor => !sensor.stale);
