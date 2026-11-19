@@ -1,0 +1,57 @@
+{
+  "schema": "ad03-power-profile-v1",
+  "created_utc": "2026-11-19T00:44:55+00:00",
+  "source": "hardware",
+  "provisional": true,
+  "pump_id": "AD-03-1",
+  "model": {
+    "form": "power_w = c0 + c1*q, inverted to estimate flow (PROVISIONAL line between a measured low-power anchor and the label rating)",
+    "degree": 1,
+    "coefficients": [
+      5.0,
+      1.0,
+      0.0
+    ],
+    "units": {
+      "q": "L/min",
+      "power": "W"
+    }
+  },
+  "domain": {
+    "flow_l_min": [
+      0.0,
+      15.0
+    ],
+    "power_w": [
+      4.0,
+      20.0
+    ],
+    "volts": [
+      11.0,
+      13.0
+    ],
+    "temp_c": [
+      5.0,
+      45.0
+    ]
+  },
+  "power_noise_w": 0.25,
+  "monotonic": true,
+  "weak_regions_l_min": [],
+  "evaluation": {
+    "method": "provisional_unvalidated",
+    "metrics": {}
+  },
+  "data": {
+    "files": [],
+    "n_training": 0,
+    "n_validation": 0,
+    "n_excluded": 0,
+    "n_settings": 0,
+    "loadcell_calibration_ids": []
+  },
+  "warnings": [
+    "PROVISIONAL: a straight line between a bench low-power reading and the label rating. Not calibrated against a weighed reference. Replace it with a profile from tools/fit_power_model.py."
+  ],
+  "checksum_sha256": "3d9bd10865643eca4be543bd5783e9ac13abb0acefb5c841c9007f8ac4dfba07"
+}

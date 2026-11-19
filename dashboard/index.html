@@ -1,274 +1,421 @@
-
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1724">
-  <title>VFM Control Room | Virtual Flow Meter</title>
+  <title>Virtual Flow Meter | Self-Calibrating Pump Monitor</title>
   <link rel="stylesheet" href="/styles.css">
   <script defer src="/app.js"></script>
 </head>
 <body>
+
+  <nav class="navbar" aria-label="Sections">
+    <a class="nav-brand" href="#live">
+      <span class="brand-mark small">V</span>
+      <span><strong>Virtual Flow Meter</strong><small>Self-calibrating pump monitor</small></span>
+    </a>
+    <div class="nav-links">
+      <a href="#live">Live</a>
+      <a href="#how">How it works</a>
+      <a href="#theory">Theory</a>
+      <a href="#edge">Edge computing</a>
+      <a href="#calibration">Calibration</a>
+      <a href="#about">About</a>
+    </div>
+    <div class="connection-area">
+      <span id="connection" class="status-pill neutral"><span class="status-dot"></span> Connecting...</span>
+      <span id="freshness" class="freshness">Awaiting telemetry</span>
+    </div>
+  </nav>
+
   <main class="dashboard">
 
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">V</div>
-        <div>
-          <p class="eyebrow">VIRTUAL FLOW METER</p>
-          <h1>Control Room</h1>
-          <p class="subtitle">Operator monitoring console</p>
-        </div>
+    <!-- ============ LIVE ============ -->
+    <section id="live" class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">ESTIMATING FLOW WITHOUT A FLOW SENSOR</p>
+        <h1>Know how much water a pump moves from the power it draws.</h1>
+        <p class="lead">
+          A small ESP32 watches a pump's electrical power and turns it into a flow estimate.
+          A weighed-water load cell is used only to calibrate and check that estimate, so the
+          finished system needs no flow meter in the pipe.
+        </p>
       </div>
 
-      <div class="connection-area">
-        <span id="connection" class="status-pill neutral">
-          <span class="status-dot"></span>
-          Connecting...
-        </span>
-        <span id="freshness" class="freshness">Awaiting telemetry</span>
-      </div>
-    </header>
+      <article class="hero-card" id="hero-card">
+        <div class="card-topline">
+          <span class="metric-label">ESTIMATED FLOW</span>
+          <span id="flow-badge" class="badge neutral">NO MODEL</span>
+        </div>
+        <div class="flow-reading big">
+          <strong id="flow">&mdash;</strong>
+          <span>L/min</span>
+        </div>
+        <p id="flow-reason" class="flow-reason">Waiting for data.</p>
+        <p id="flow-model" class="flow-model"></p>
+        <div class="flow-accent"></div>
+      </article>
+    </section>
 
     <section class="simulation-banner" id="source-banner">
-      <span class="banner-icon">ⓘ</span>
+      <span class="banner-icon">&#9432;</span>
       <p>
         <strong id="banner-title">Waiting for the ESP32</strong>
-        <span id="banner-text">No readings yet. Start the serial bridge or post to /api/hardware/sample. No simulated values are shown.</span>
+        <span id="banner-text">No readings yet. Start the serial bridge. No simulated values are shown.</span>
       </p>
       <span class="environment-tag" id="banner-tag">NO DATA</span>
     </section>
 
     <section class="section-heading">
-      <div>
-        <p class="eyebrow">LIVE TELEMETRY</p>
-        <h2>Pump overview</h2>
-      </div>
+      <div><p class="eyebrow">MEASURED BY THE ESP32</p><h2>Live sensors</h2></div>
       <span id="updated" class="updated-label">No readings yet</span>
     </section>
 
-    <section class="metrics-grid" aria-label="Live pump readings">
-
-      <article class="metric-card flow-card">
-        <div class="card-topline">
-          <span class="metric-label">ESTIMATED FLOW</span>
-          <span class="metric-icon">↗</span>
-        </div>
-        <div class="flow-reading">
-          <strong id="flow">—</strong>
-          <span>L/min</span>
-        </div>
-        <p id="uncertainty" class="metric-footnote">Uncertainty: —</p>
-        <div class="flow-accent"></div>
-      </article>
-
-      <article class="metric-card">
-        <div class="card-topline">
-          <span class="metric-label">HEAD ESTIMATE</span>
-          <span class="metric-icon">H</span>
-        </div>
-        <p class="metric-reading"><strong id="head-flow">—</strong><span>L/min</span></p>
-        <p class="metric-footnote">Head-based flow</p>
-      </article>
-
-      <article class="metric-card">
-        <div class="card-topline">
-          <span class="metric-label">POWER ESTIMATE</span>
-          <span class="metric-icon">P</span>
-        </div>
-        <p class="metric-reading"><strong id="power-flow">—</strong><span>L/min</span></p>
-        <p class="metric-footnote">Power-based flow</p>
-      </article>
-
-      <article class="metric-card">
-        <div class="card-topline">
-          <span class="metric-label">ESTIMATE DISAGREEMENT</span>
-          <span class="metric-icon">Δ</span>
-        </div>
-        <p class="metric-reading"><strong id="disagreement">—</strong><span>L/min</span></p>
-        <p class="metric-footnote">Absolute head-power difference</p>
-      </article>
-
-    </section>
-
-    <section class="section-heading sensor-heading">
-      <div>
-        <p class="eyebrow">MEASURED BY THE ESP32</p>
-        <h2>Live sensors</h2>
-      </div>
-    </section>
-
-    <section class="metrics-grid sensor-grid" aria-label="Live sensor readings">
-
-      <article class="metric-card" id="card-volts">
-        <div class="card-topline">
-          <span class="metric-label">PUMP VOLTAGE</span>
-          <span class="metric-icon">V</span>
-        </div>
-        <p class="metric-reading"><strong id="volts">N/A</strong><span>V</span></p>
-        <p class="metric-footnote" id="volts-note">INA219</p>
-      </article>
-
-      <article class="metric-card" id="card-amps">
-        <div class="card-topline">
-          <span class="metric-label">PUMP CURRENT</span>
-          <span class="metric-icon">A</span>
-        </div>
-        <p class="metric-reading"><strong id="amps">N/A</strong><span>mA</span></p>
-        <p class="metric-footnote" id="amps-note">INA219</p>
-      </article>
-
-      <article class="metric-card" id="card-power">
-        <div class="card-topline">
-          <span class="metric-label">PUMP POWER</span>
-          <span class="metric-icon">W</span>
-        </div>
+    <section class="metrics-grid five" aria-label="Live sensor readings">
+      <article class="metric-card compact" id="card-power">
+        <div class="card-topline"><span class="metric-label">PUMP POWER</span><span class="metric-icon">W</span></div>
         <p class="metric-reading"><strong id="power">N/A</strong><span>W</span></p>
         <p class="metric-footnote" id="power-note">Volts x amps</p>
       </article>
-
-      <article class="metric-card" id="card-temp">
-        <div class="card-topline">
-          <span class="metric-label">WATER TEMPERATURE</span>
-          <span class="metric-icon">T</span>
-        </div>
+      <article class="metric-card compact" id="card-volts">
+        <div class="card-topline"><span class="metric-label">SUPPLY VOLTAGE</span><span class="metric-icon">V</span></div>
+        <p class="metric-reading"><strong id="volts">N/A</strong><span>V</span></p>
+        <p class="metric-footnote" id="volts-note">INA219</p>
+      </article>
+      <article class="metric-card compact" id="card-amps">
+        <div class="card-topline"><span class="metric-label">PUMP CURRENT</span><span class="metric-icon">A</span></div>
+        <p class="metric-reading"><strong id="amps">N/A</strong><span>mA</span></p>
+        <p class="metric-footnote" id="amps-note">INA219</p>
+      </article>
+      <article class="metric-card compact" id="card-temp">
+        <div class="card-topline"><span class="metric-label">WATER TEMPERATURE</span><span class="metric-icon">T</span></div>
         <p class="metric-reading"><strong id="temp">N/A</strong><span>&deg;C</span></p>
         <p class="metric-footnote" id="temp-note">DS18B20</p>
       </article>
-
-      <article class="metric-card" id="card-mass">
-        <div class="card-topline">
-          <span class="metric-label">LOAD CELL</span>
-          <span class="metric-icon">M</span>
-        </div>
+      <article class="metric-card compact" id="card-mass">
+        <div class="card-topline"><span class="metric-label">REFERENCE LOAD CELL</span><span class="metric-icon">M</span></div>
         <p class="metric-reading"><strong id="mass">N/A</strong><span id="mass-unit">g</span></p>
         <p class="metric-footnote" id="mass-note">HX711</p>
       </article>
-
-      <article class="metric-card" id="card-servo">
-        <div class="card-topline">
-          <span class="metric-label">VALVE COMMAND</span>
-          <span class="metric-icon">&deg;</span>
-        </div>
-        <p class="metric-reading"><strong id="servo">N/A</strong><span>&deg;</span></p>
-        <p class="metric-footnote" id="servo-note">Servo commanded angle</p>
-      </article>
-
     </section>
 
-    <section class="details-grid">
-
+    <section class="chart-grid">
       <article class="panel">
         <div class="panel-heading">
-          <div>
-            <p class="eyebrow">SUPERVISION</p>
-            <h2>Operating status</h2>
-          </div>
-          <span id="validity" class="status-tag neutral">Awaiting data</span>
+          <div><p class="eyebrow">ESTIMATE</p><h2>Estimated flow</h2>
+            <p class="panel-description">Recent estimates seen by this page</p></div>
+          <span id="flow-samples" class="sample-count">0 samples</span>
         </div>
-
-        <div class="status-list">
-          <div class="status-row">
-            <span>Device state</span>
-            <strong id="state">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Operating mode</span>
-            <strong id="mode">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Confidence</span>
-            <strong id="confidence">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Data source</span>
-            <strong id="source">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Device ID</span>
-            <strong id="device">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Sequence</span>
-            <strong id="sequence">—</strong>
-          </div>
-          <div class="status-row">
-            <span>Model version</span>
-            <strong id="model-version">—</strong>
-          </div>
-        </div>
+        <canvas id="flow-chart" width="960" height="300" role="img" aria-label="Estimated flow history"></canvas>
+        <p id="flow-chart-note" class="chart-note">Waiting for an estimate...</p>
       </article>
-
-      <article class="panel chart-panel">
+      <article class="panel">
         <div class="panel-heading">
-          <div>
-            <p class="eyebrow">PERFORMANCE</p>
-            <h2>Flow history</h2>
-            <p class="panel-description">Estimated flow over elapsed device time</p>
-          </div>
-          <span id="samples" class="sample-count">0 samples</span>
+          <div><p class="eyebrow">MEASURED</p><h2>Pump power</h2>
+            <p class="panel-description">Electrical power (W) since the gateway started</p></div>
+          <span id="power-samples" class="sample-count">0 samples</span>
         </div>
-
-        <canvas
-          id="chart"
-          width="960"
-          height="300"
-          role="img"
-          aria-label="Recent estimated flow history chart">
-        </canvas>
-
-        <p id="chart-note" class="chart-note">Waiting for telemetry...</p>
+        <canvas id="power-chart" width="960" height="300" role="img" aria-label="Pump power history"></canvas>
+        <p id="power-chart-note" class="chart-note">Waiting for INA219 data...</p>
       </article>
-
     </section>
 
-    <section class="panel power-panel">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">MEASURED</p>
-          <h2>Pump power history</h2>
-          <p class="panel-description">Electrical power (W) over time since the gateway started (s)</p>
-        </div>
-        <span id="power-samples" class="sample-count">0 samples</span>
+    <!-- ============ HOW IT WORKS ============ -->
+    <section id="how" class="block">
+      <div class="block-head">
+        <p class="eyebrow">HOW IT WORKS</p>
+        <h2>From electrical power to a flow number</h2>
+        <p class="lead small">
+          A pump that moves more water works harder and draws more power. The system learns that
+          relationship once, using weighed water as the truth, and then reads flow from power alone.
+        </p>
       </div>
 
-      <canvas
-        id="power-chart"
-        width="960"
-        height="300"
-        role="img"
-        aria-label="Recent pump power history chart">
-      </canvas>
+      <div class="pipeline" aria-label="System pipeline">
+        <div class="stage" id="st-pump"><span class="stage-icon">&#9881;</span><strong>Pump</strong><small>AD-03, 12 V submersible</small><em id="pl-power">&mdash;</em></div>
+        <div class="link"><i></i></div>
+        <div class="stage" id="st-ina"><span class="stage-icon">&#9889;</span><strong>INA219</strong><small>Voltage and current</small><em id="pl-ina">&mdash;</em></div>
+        <div class="link"><i></i></div>
+        <div class="stage edge" id="st-edge"><span class="stage-icon">&#9670;</span><strong>ESP32 (edge)</strong><small>10 Hz loop, 1 s summary</small><em id="pl-edge">&mdash;</em></div>
+        <div class="link"><i></i></div>
+        <div class="stage" id="st-gw"><span class="stage-icon">&#9638;</span><strong>Gateway</strong><small>Estimate, store, serve</small><em id="pl-gw">&mdash;</em></div>
+        <div class="link"><i></i></div>
+        <div class="stage" id="st-dash"><span class="stage-icon">&#9783;</span><strong>Dashboard</strong><small>What you are looking at</small><em id="pl-dash">&mdash;</em></div>
+      </div>
 
-      <p id="power-chart-note" class="chart-note">Waiting for INA219 data...</p>
+      <div class="pipeline reference" aria-label="Calibration lane">
+        <div class="lane-label">CALIBRATION LANE (offline, uses weighed water)</div>
+        <div class="stage ref"><span class="stage-icon">&#9878;</span><strong>Load cell + HX711</strong><small>Weighs the water</small></div>
+        <div class="link"><i></i></div>
+        <div class="stage ref"><span class="stage-icon">&#8721;</span><strong>Reference flow</strong><small>Q = 60 &middot; &Delta;m / (&rho; &middot; &Delta;t)</small></div>
+        <div class="link"><i></i></div>
+        <div class="stage ref"><span class="stage-icon">&#8767;</span><strong>Fit + validate</strong><small>Held-out runs</small></div>
+        <div class="link"><i></i></div>
+        <div class="stage ref"><span class="stage-icon">&#10003;</span><strong>Profile</strong><small>Checksummed model</small></div>
+        <div class="link up"><i></i></div>
+        <div class="stage ref note"><small>The profile is loaded by both the ESP32 and the gateway.</small></div>
+      </div>
+
+      <div class="walk-grid">
+        <article class="panel walk">
+          <p class="eyebrow">LIVE WALK-THROUGH</p>
+          <h3>What the system is doing right now</h3>
+          <ol class="steps">
+            <li><span class="n">1</span><div><strong>Measure power</strong><p id="step-power">No power reading yet.</p></div></li>
+            <li><span class="n">2</span><div><strong>Apply the model</strong><p id="step-model">No model is loaded.</p></div></li>
+            <li><span class="n">3</span><div><strong>Invert it to get flow</strong><p id="step-invert">&mdash;</p></div></li>
+            <li><span class="n">4</span><div><strong>Check it is safe to answer</strong><p>The estimate is only given when every check passes.</p></div></li>
+            <li><span class="n">5</span><div><strong>Report the result</strong><p id="step-result">&mdash;</p></div></li>
+          </ol>
+        </article>
+
+        <article class="panel walk">
+          <p class="eyebrow">VALIDITY CHECKS</p>
+          <h3>Does the estimate deserve to be shown?</h3>
+          <ul id="gates" class="gates"></ul>
+          <p class="panel-description">When any check fails, the dashboard shows "Unavailable" and the reason. It never guesses.</p>
+        </article>
+      </div>
     </section>
 
-    <section class="panel candidate-panel">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">MODEL MANAGEMENT</p>
-          <h2>Pending candidate</h2>
-          <p class="panel-description">
-            No candidate model has been proposed by the device.
+    <!-- ============ THEORY ============ -->
+    <section id="theory" class="block">
+      <div class="block-head">
+        <p class="eyebrow">CONCEPTS AND THEORY</p>
+        <h2>The ideas behind the project</h2>
+        <p class="lead small">
+          Each card says what the idea is, how it is used here, and honestly where it stands:
+          running on the hardware, running in simulation, or still planned.
+        </p>
+      </div>
+
+      <div class="concept-grid">
+        <article class="concept">
+          <div class="concept-top"><h3>Virtual (soft) sensor</h3><span class="chip hw">ON HARDWARE</span></div>
+          <p>Estimates a quantity you do not measure directly from quantities you do. Here, flow comes from the pump's electrical power, so there is no flow meter in the pipe to clog, restrict or fail.</p>
+          <code>gateway/estimator.py &middot; vfm_estimator.h</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Reference-based calibration</h3><span class="chip hw">TOOLS BUILT</span></div>
+          <p>Water is caught in a jug on a load cell. Flow is the mass gained over time, divided by density. Those weighed values are the ground truth that the power model is fitted to and judged against.</p>
+          <code>tools/calibrate_loadcell.py &middot; record_collection.py &middot; fit_power_model.py</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Edge computing</h3><span class="chip hw">BUILT, FLASH PENDING</span></div>
+          <p>The ESP32 computes the estimate itself from a 10 Hz loop and sends a one-per-second summary. It keeps estimating without the laptop and sends far less data. See the Edge computing section.</p>
+          <code>device/firmware/vfm_edge/</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Honest uncertainty</h3><span class="chip hw">ON HARDWARE</span></div>
+          <p>A model is only valid where it was calibrated. Outside its ranges, or where power barely changes with flow, the system says "Unavailable". Results are checked on runs the model never saw, and profiles carry a checksum.</p>
+          <code>profile checks &middot; held-out validation</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Online learning</h3><span class="chip sim">SIMULATION</span></div>
+          <p>Recursive least squares keeps adjusting the model as data arrives. A CUSUM detector flags drift, and an excitation gate refuses to learn unless the flow varied enough to teach anything.</p>
+          <code>vfm/slowloop.py</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Machine unlearning</h3><span class="chip sim">SIMULATION</span></div>
+          <p>If a bad run (a leak, an air pocket) has taught the model something wrong, its influence is removed directly with a Sherman&ndash;Morrison downdate, instead of retraining from scratch.</p>
+          <code>vfm/slowloop.py &middot; LearningModule.downdate</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Digital triplet</h3><span class="chip sim">SIMULATION</span></div>
+          <p>A supervisor runs the system in Manual, Assisted or Auto mode, requires operator approval for model changes, and trips safely on faults. The physical device, its model and the operator stay in the loop together.</p>
+          <code>vfm/supervisor.py</code>
+        </article>
+
+        <article class="concept">
+          <div class="concept-top"><h3>Sensor fusion</h3><span class="chip plan">PLANNED</span></div>
+          <p>Discharge pressure would be a second, independent input, so power and pressure can cross-check each other. No suitable pressure sensor is fitted yet, so pressure is not used.</p>
+          <code>needs a water-compatible pressure sensor</code>
+        </article>
+      </div>
+
+      <div class="formula-grid">
+        <article class="panel formula">
+          <p class="eyebrow">REFERENCE FLOW</p>
+          <div class="eq">Q<sub>ref</sub> = 60 &middot; &Delta;m / ( &rho; &middot; &Delta;t )</div>
+          <p>&Delta;m is kilograms gained, &Delta;t seconds, &rho; the water density in kg/L. The 60 converts litres per second to litres per minute.</p>
+        </article>
+        <article class="panel formula">
+          <p class="eyebrow">POWER MODEL</p>
+          <div class="eq">P(Q) = c<sub>0</sub> + c<sub>1</sub>Q + c<sub>2</sub>Q&sup2;</div>
+          <p>Fitted from the weighed runs. Flow is recovered by solving this for Q on the branch where power rises with flow.</p>
+        </article>
+        <article class="panel formula">
+          <p class="eyebrow">DRIFT DETECTION</p>
+          <div class="eq">S<sub>t</sub> = max( 0, S<sub>t&minus;1</sub> + z<sub>t</sub> &minus; k )</div>
+          <p>CUSUM accumulates small persistent errors and raises an alarm when the sum crosses a threshold.</p>
+        </article>
+        <article class="panel formula">
+          <p class="eyebrow">UNLEARNING</p>
+          <div class="eq">(A + uv<sup>T</sup>)<sup>&minus;1</sup> = A<sup>&minus;1</sup> &minus; A<sup>&minus;1</sup>uv<sup>T</sup>A<sup>&minus;1</sup> / (1 + v<sup>T</sup>A<sup>&minus;1</sup>u)</div>
+          <p>A rank-one update of a matrix inverse, so one sample's influence is removed without a full refit.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ EDGE ============ -->
+    <section id="edge" class="block">
+      <div class="block-head">
+        <p class="eyebrow">EDGE COMPUTING</p>
+        <h2>The ESP32 does the thinking</h2>
+        <p class="lead small">
+          Processing happens next to the sensor. The device estimates flow itself and the laptop
+          independently repeats the calculation, so the two can be compared live.
+        </p>
+      </div>
+
+      <div class="edge-grid">
+        <article class="panel edge-live">
+          <div class="panel-heading">
+            <div><p class="eyebrow">LIVE COMPARISON</p><h2>Device vs gateway</h2></div>
+            <span id="edge-status" class="status-tag neutral">NOT REPORTING</span>
+          </div>
+          <div class="compare">
+            <div class="cmp"><span class="metric-label">ESP32 (EDGE)</span><strong id="edge-flow">&mdash;</strong><small>L/min</small></div>
+            <div class="cmp"><span class="metric-label">GATEWAY (LAPTOP)</span><strong id="gw-flow">&mdash;</strong><small>L/min</small></div>
+            <div class="cmp"><span class="metric-label">DIFFERENCE</span><strong id="edge-delta">&mdash;</strong><small>L/min</small></div>
+          </div>
+          <div class="status-list">
+            <div class="status-row"><span>Estimate compute time on the device</span><strong id="edge-compute">&mdash;</strong></div>
+            <div class="status-row"><span>Slowest fast-loop pass (budget 100 ms)</span><strong id="edge-loop">&mdash;</strong></div>
+            <div class="status-row"><span>Samples averaged per summary</span><strong id="edge-window">&mdash;</strong></div>
+            <div class="status-row"><span>Device refusal reason</span><strong id="edge-reason">&mdash;</strong></div>
+          </div>
+          <p id="edge-note" class="panel-description">
+            The edge firmware is not flashed yet, so only the gateway is computing. Flash
+            device/firmware/vfm_edge to see the device's own estimate here.
           </p>
-        </div>
-        <span class="status-tag neutral">NONE</span>
+        </article>
+
+        <article class="panel edge-why">
+          <p class="eyebrow">WHY EDGE</p>
+          <ul class="why">
+            <li><strong>Local decisions.</strong> The estimate and its checks run on the device, not on a server.</li>
+            <li><strong>Less data.</strong> Ten samples per second are reduced to one summary per second, about a tenth of the readings sent.</li>
+            <li><strong>Resilience.</strong> If the laptop or link drops, the device keeps estimating.</li>
+            <li><strong>Predictable latency.</strong> The compute time and loop time are measured on the device and shown here.</li>
+          </ul>
+          <div class="phases">
+            <div class="phase done"><i></i><span><strong>Portable estimator + PC equivalence test</strong><small>Done</small></span></div>
+            <div class="phase next"><i></i><span><strong>Flash and compare on the ESP32</strong><small>Next</small></span></div>
+            <div class="phase"><i></i><span><strong>Calibrated model replaces the provisional one</strong><small>Planned</small></span></div>
+            <div class="phase"><i></i><span><strong>Measure data reduction and offline behaviour</strong><small>Planned</small></span></div>
+            <div class="phase"><i></i><span><strong>Wi-Fi and MQTT transport</strong><small>Planned</small></span></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ CALIBRATION ============ -->
+    <section id="calibration" class="block">
+      <div class="block-head">
+        <p class="eyebrow">CALIBRATION</p>
+        <h2>Model status and project progress</h2>
       </div>
 
-      <p class="candidate-disclaimer">
-        Candidate updates need independent weighed reference flow and an approval
-        flow that does not exist yet. No model changes or approval actions are
-        available in this dashboard.
-      </p>
+      <div class="calib-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">ACTIVE MODEL</p><h2>Power-to-flow profile</h2></div>
+            <span id="model-state" class="status-tag neutral">NONE</span>
+          </div>
+          <div class="status-list">
+            <div class="status-row"><span>Model id</span><strong id="model-id">&mdash;</strong></div>
+            <div class="status-row"><span>Form</span><strong id="model-form">&mdash;</strong></div>
+            <div class="status-row"><span>Coefficients c0, c1, c2</span><strong id="model-coeffs">&mdash;</strong></div>
+            <div class="status-row"><span>Calibrated power range</span><strong id="model-power">&mdash;</strong></div>
+            <div class="status-row"><span>Calibrated flow range</span><strong id="model-flow">&mdash;</strong></div>
+            <div class="status-row"><span>Evidence</span><strong id="model-evidence">&mdash;</strong></div>
+            <div class="status-row"><span>Held-out error (MAE)</span><strong id="model-error">&mdash;</strong></div>
+          </div>
+          <p id="model-warning" class="model-warning"></p>
+        </article>
+
+        <article class="panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">PROGRESS</p><h2>Milestones</h2></div>
+          </div>
+          <ol class="milestones">
+            <li class="done"><i></i><span><strong>M0 Power and pump</strong><small>Pump, adapter, fuse and switch run leak-free</small></span></li>
+            <li class="part"><i></i><span><strong>M1 Sensor bench</strong><small>INA219 and DS18B20 verified. Load cell mounted, stability test and calibration pending</small></span></li>
+            <li class="part"><i></i><span><strong>M2 Calibration rig</strong><small>Plumbing and valve done. Weighed collections not recorded yet</small></span></li>
+            <li class="todo"><i></i><span><strong>M3 Power model</strong><small>Fit and held-out validation tools built, awaiting data</small></span></li>
+            <li class="part"><i></i><span><strong>M4 ESP32 estimate</strong><small>Estimator built and checked against Python on a PC. Flashing pending</small></span></li>
+            <li class="todo"><i></i><span><strong>M5 Live app over MQTT</strong><small>Live app works over USB. MQTT not built</small></span></li>
+            <li class="part"><i></i><span><strong>M6 Valve and later research</strong><small>Servo and buck tested. Learning, unlearning and supervisor exist in simulation</small></span></li>
+          </ol>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="about" class="block">
+      <div class="block-head">
+        <p class="eyebrow">ABOUT THE PROJECT</p>
+        <h2>Self-Calibrating Virtual Flow Meter</h2>
+        <p class="lead small">
+          A low-cost way to read a pump's flow from its power, calibrated against weighed water,
+          with the estimate computed on the device. It is a bench prototype for one pump on one rig.
+        </p>
+      </div>
+
+      <div class="about-grid">
+        <article class="panel">
+          <p class="eyebrow">THE PUMP</p>
+          <div class="status-list">
+            <div class="status-row"><span>Model</span><strong>AD-03 submersible</strong></div>
+            <div class="status-row"><span>Rating (label)</span><strong>12 V DC, 20 W</strong></div>
+            <div class="status-row"><span>Max head / max flow</span><strong>6.0 m / 15 L/min</strong></div>
+            <div class="status-row"><span>Protection</span><strong>IPX8</strong></div>
+          </div>
+          <p class="panel-description">The label maxima are separate end points, not a measured operating point.</p>
+        </article>
+        <article class="panel">
+          <p class="eyebrow">HARDWARE</p>
+          <ul class="why compact">
+            <li><strong>ESP32</strong> controller and edge processor</li>
+            <li><strong>INA219</strong> pump voltage, current and power</li>
+            <li><strong>DS18B20</strong> water temperature, for density</li>
+            <li><strong>5 kg load cell + HX711</strong> weighed reference</li>
+            <li><strong>LM2596 + servo</strong> valve actuation</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <p class="eyebrow">SOFTWARE</p>
+          <ul class="why compact">
+            <li><strong>Firmware</strong> Arduino C++ on the ESP32</li>
+            <li><strong>Gateway</strong> Python, HTTP, checksummed profiles</li>
+            <li><strong>Tools</strong> calibration, collection, model fitting</li>
+            <li><strong>Dashboard</strong> plain HTML, CSS and JavaScript</li>
+            <li><strong>Simulation</strong> learning, unlearning, supervisor</li>
+          </ul>
+        </article>
+        <article class="panel honesty">
+          <p class="eyebrow">WHAT IS AND IS NOT CLAIMED</p>
+          <p id="honesty-text">
+            No flow model is loaded, so no flow estimate is shown. Learning, unlearning and the
+            supervisor run in simulation only.
+          </p>
+        </article>
+      </div>
     </section>
 
     <footer class="footer">
-      <span>VFM · Operator Dashboard</span>
+      <span>Virtual Flow Meter &middot; Self-calibrating pump monitor</span>
       <span>Read-only monitoring interface</span>
     </footer>
 
   </main>
-
 </body>
 </html>

@@ -13,7 +13,7 @@ from pathlib import Path
 import threading
 from urllib.parse import parse_qs, urlsplit
 
-from gateway.estimator import PowerEstimator, ProfileError, load_profile
+from gateway.estimator import PowerEstimator, ProfileError, compare_edge, load_profile
 from gateway.hardware import HardwareStore, ReadingError, UnknownSensor, SENSORS
 
 
@@ -83,7 +83,11 @@ def make_handler(store, hardware=None, token=None, estimator=None):
             if parsed.path == "/api/hardware/latest":
                 snapshot = hardware.snapshot()
                 snapshot["estimate"] = estimator.estimate(snapshot["sensors"])
+                snapshot["edge"] = compare_edge(snapshot["estimate"], snapshot["sensors"].get("edge"))
                 self.reply_json(snapshot)
+                return
+            if parsed.path == "/api/profile":
+                self.reply_json(estimator.describe())
                 return
             if parsed.path == "/api/hardware/history":
                 sensor = parse_qs(parsed.query).get("sensor", [""])[0]

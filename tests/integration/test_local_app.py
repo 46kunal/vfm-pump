@@ -25,9 +25,10 @@ def test_bounded_store_and_telemetry_api():
             payload = json.load(response)
         assert payload == {"schema_version": 1, "items": rows[-2:]}
         with urlopen(base + "/") as response:
-            assert b"Pump overview" in response.read()
+            assert b"Virtual Flow Meter" in response.read()
         with urlopen(base + "/app.js") as response:
-            assert b"/api/telemetry" in response.read()
+            script = response.read()
+            assert b"/api/hardware/latest" in script and b"/api/profile" in script
         with urlopen(base + "/styles.css") as response:
             assert response.status == 200
         try:

@@ -160,3 +160,66 @@ def test_latest_without_profile_says_unavailable(served):
     with urlopen(base + "/api/hardware/latest") as response:
         body = json.load(response)
     assert body["estimate"] == {"available": False, "reason": "No calibrated profile loaded"}
+
+
+def test_provisional_profile_is_flagged_and_unvalidated(tmp_path):
+    from tools.make_provisional_profile import build_provisional
+    path = tmp_path / "prov.json"
+    path.write_text(json.dumps(build_provisional()))
+    with pytest.raises(ProfileError, match="held-out"):
+        load_profile(path)
+    estimator = PowerEstimator(load_profile(path, allow_unvalidated=True))
+    result = estimator.estimate(sensors(power=7.4))
+    assert result["available"] and result["provisional"] and not result["validated"]
+    assert result["flow_l_min"] == pytest.approx(2.4, abs=0.01)
+    assert estimator.describe()["provisional"] is True
+
+
+def test_estimate_is_never_negative(tmp_path):
+    from tools.make_provisional_profile import build_provisional
+    path = tmp_path / "prov.json"
+    path.write_text(json.dumps(build_provisional()))
+    estimator = PowerEstimator(load_profile(path, allow_unvalidated=True))
+    assert estimator.estimate(sensors(power=5.0))["flow_l_min"] >= 0.0
+
+
+def test_profile_endpoint(served, tmp_path):
+    base, _ = served(PowerEstimator(load_profile(write_profile(tmp_path))))
+    with urlopen(base + "/api/profile") as response:
+        body = json.load(response)
+    assert body["loaded"] is True and body["validated"] is True and body["provisional"] is False
+    assert len(body["coefficients"]) == 3
+    base2, _ = served(None)
+    with urlopen(base2 + "/api/profile") as response:
+        assert json.load(response) == {"loaded": False}
+
+
+def test_edge_reading_is_stored_and_compared(served, tmp_path):
+    base, hardware = served(PowerEstimator(load_profile(write_profile(tmp_path))))
+    hardware.update_many({
+        "ina219": {"volts": 12.3, "amps": 5.85 / 12.3},
+        "edge": {"available": 1, "flow_l_min": 3.02, "reason": 0, "window_n": 10,
+                 "compute_us": 41, "loop_max_us": 900}})
+    with urlopen(base + "/api/hardware/latest") as response:
+        body = json.load(response)
+    edge = body["edge"]
+    assert edge["reporting"] and edge["available"]
+    assert edge["flow_l_min"] == pytest.approx(3.02)
+    assert edge["delta_l_min"] == pytest.approx(0.02, abs=0.1)
+    assert edge["compute_us"] == 41
+
+
+def test_edge_refusal_is_reported_with_its_reason(served):
+    base, hardware = served(None)
+    hardware.update_many({"edge": {"available": 0, "reason": 4, "window_n": 10}})
+    with urlopen(base + "/api/hardware/latest") as response:
+        edge = json.load(response)["edge"]
+    assert edge["reporting"] and not edge["available"]
+    assert edge["reason"] == "pump power outside range"
+
+
+def test_no_edge_firmware_means_not_reporting(served):
+    base, hardware = served(None)
+    hardware.update_many({"ina219": {"volts": 12.3, "amps": 0.4}})
+    with urlopen(base + "/api/hardware/latest") as response:
+        assert json.load(response)["edge"] == {"reporting": False}

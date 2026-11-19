@@ -14,6 +14,11 @@ SENSORS = {
     "ds18b20": ({"temp_c": (-55.0, 125.0)}, {}),
     "hx711": ({}, {"mass_g": (-10000.0, 10000.0), "raw": (-8388608.0, 8388607.0)}),
     "servo": ({"angle_deg": (0.0, 180.0)}, {}),
+    # The flow estimate computed ON the ESP32 (edge firmware). available is 0 or 1; reason codes
+    # are listed in device/firmware/vfm_edge/vfm_estimator.h.
+    "edge": ({"available": (0.0, 1.0)},
+             {"flow_l_min": (0.0, 100.0), "reason": (0.0, 10.0), "window_n": (0.0, 10000.0),
+              "compute_us": (0.0, 1e7), "loop_max_us": (0.0, 1e7)}),
 }
 
 

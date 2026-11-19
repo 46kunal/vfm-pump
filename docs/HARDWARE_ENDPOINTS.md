@@ -58,3 +58,16 @@ token and keep it on a trusted network. There is no encryption.
 
 Until `HX_COUNTS_PER_GRAM` is set in the sketch, only `raw` counts are sent and the
 dashboard shows them as "not calibrated". Mass in grams appears after calibration.
+
+## Estimate, model and edge fields
+
+- `GET /api/hardware/latest` also returns `estimate` (the gateway's power-only flow estimate, or
+  `available: false` with a `reason`) and `edge` (the flow the ESP32 computed itself, compared
+  with the gateway's estimate; `{"reporting": false}` when the edge firmware is not running).
+- `GET /api/profile` describes the loaded model: id, coefficients, calibrated ranges, whether it
+  is validated or provisional, and its warnings. `{"loaded": false}` when none is loaded.
+- The `edge` sensor accepts `available` (0 or 1) and optionally `flow_l_min`, `reason`,
+  `window_n`, `compute_us` and `loop_max_us`. The firmware that sends it is
+  `device/firmware/vfm_edge/`; see [EDGE_COMPUTING_PLAN.md](EDGE_COMPUTING_PLAN.md).
+- Start the gateway with `--profile <file>` (and `--allow-unvalidated` for a provisional or
+  unvalidated profile). `tools/make_provisional_profile.py` writes the placeholder profile.

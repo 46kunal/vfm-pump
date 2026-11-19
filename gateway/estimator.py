@@ -60,9 +60,67 @@ def _unavailable(reason):
     return {"available": False, "reason": reason}
 
 
+EDGE_REASONS = {0: "ok", 1: "no usable power reading", 2: "supply voltage outside range",
+                3: "water temperature outside range", 4: "pump power outside range",
+                5: "power does not map to a flow", 6: "in a weak range"}
+
+
+def compare_edge(gateway_estimate, edge_sensor):
+    """The flow the ESP32 computed on the device, set beside the gateway's own estimate.
+
+    The ESP32 averages a 1 s window while the gateway uses that window's reported mean, so the
+    two should agree closely when both run the same profile. A large gap means different
+    profiles or a fault, and is shown rather than hidden."""
+    if not edge_sensor:
+        return {"reporting": False}
+    reason = int(edge_sensor.get("reason", 0))
+    info = {
+        "reporting": True,
+        "stale": bool(edge_sensor.get("stale")),
+        "available": bool(edge_sensor.get("available")) and "flow_l_min" in edge_sensor,
+        "reason_code": reason,
+        "reason": EDGE_REASONS.get(reason, "unknown"),
+        "window_n": edge_sensor.get("window_n"),
+        "compute_us": edge_sensor.get("compute_us"),
+        "loop_max_us": edge_sensor.get("loop_max_us"),
+        "delta_l_min": None,
+    }
+    if info["available"]:
+        info["flow_l_min"] = edge_sensor["flow_l_min"]
+        if gateway_estimate.get("available"):
+            info["delta_l_min"] = info["flow_l_min"] - gateway_estimate["flow_l_min"]
+    return info
+
+
 class PowerEstimator:
     def __init__(self, profile):
         self.profile = profile
+
+    def describe(self):
+        """What the dashboard shows about the active model. Never claims more than the profile."""
+        profile = self.profile
+        if profile is None:
+            return {"loaded": False}
+        method = profile["evaluation"]["method"]
+        return {
+            "loaded": True,
+            "model_id": profile["checksum_sha256"][:12],
+            "created_utc": profile.get("created_utc"),
+            "pump_id": profile.get("pump_id"),
+            "form": profile["model"].get("form"),
+            "degree": profile["model"].get("degree"),
+            "coefficients": profile["model"]["coefficients"],
+            "domain": profile["domain"],
+            "weak_regions_l_min": profile["weak_regions_l_min"],
+            "power_noise_w": profile["power_noise_w"],
+            "evaluation_method": method,
+            "validated": method == "held_out_validation",
+            "provisional": bool(profile.get("provisional")),
+            "metrics": profile["evaluation"].get("metrics", {}),
+            "warnings": profile.get("warnings", []),
+            "n_training": profile.get("data", {}).get("n_training"),
+            "n_validation": profile.get("data", {}).get("n_validation"),
+        }
 
     def estimate(self, sensors):
         profile = self.profile
@@ -95,7 +153,7 @@ class PowerEstimator:
         flow, _, valid = solve_curve(profile["model"]["coefficients"], power, q_hi, True)
         if not valid or flow < q_lo - Q_TOLERANCE_L_MIN:
             return _unavailable("Power does not map to a flow in the calibrated range")
-        flow = float(flow)
+        flow = max(float(flow), 0.0)
         for low, high in profile["weak_regions_l_min"]:
             if low <= flow <= high:
                 return _unavailable("In a weak range where power barely changes with flow")
@@ -105,6 +163,7 @@ class PowerEstimator:
             "available": True,
             "flow_l_min": flow,
             "validated": profile["evaluation"]["method"] == "held_out_validation",
+            "provisional": bool(profile.get("provisional")),
             "evaluation_method": profile["evaluation"]["method"],
             "error_mae_l_min": metrics.get("mae_l_min"),
             "model_id": profile["checksum_sha256"][:12],
